@@ -5,6 +5,9 @@
 // sed -e's/PyVarObject_HEAD_INIT(\([^)]*\))/PyVarObject_HEAD_INIT_COMMA(\1),/'
 
 //[[[cog
+//
+// ## Main PyTypeObject slots ##
+//
 //for num_fillers, field_name in reversed(list(enumerate("""
 //  tp_name tp_basicsize tp_itemsize tp_dealloc tp_vectorcall_offset tp_getattr
 //  tp_setattr tp_compare tp_repr tp_as_number tp_as_sequence tp_as_mapping
@@ -26,6 +29,61 @@
 //
 //  PyTypeObject typename = {
 //  PyVarObject_HEAD_INIT_COMMA(metatype, size),
+//  %(fillers)s%(comma)s
+//- slotval,
+//+ .%(field_name)s = slotval,
+//  ...
+//  };""" % locals())
+//
+// ## PyNumberMethods slots ##
+//
+//for num_fillers, field_name in reversed(list(enumerate("""
+//  nb_add nb_subtract nb_multiply nb_remainder nb_divmod nb_power nb_negative
+//  nb_positive nb_absolute nb_bool nb_invert nb_lshift nb_rshift nb_and
+//  nb_xor nb_or nb_int nb_reserved nb_float
+//  nb_inplace_add nb_inplace_subtract nb_inplace_multiply nb_inplace_remainder
+//  nb_inplace_power nb_inplace_lshift nb_inplace_rshift nb_inplace_and
+//  nb_inplace_xor nb_inplace_or
+//  nb_floor_divide nb_true_divide nb_inplace_floor_divide
+//  nb_inplace_true_divide
+//  nb_index
+//  nb_matrix_multiply nb_inplace_matrix_multiply
+//""".split()))):
+//    fillers = ','.join(f'E{n}' for n in range(num_fillers))
+//    if fillers:
+//        comma = ','
+//    else:
+//        comma = ''
+//    print("""
+//@@
+//identifier structname;
+//expression slotval%(comma)s%(fillers)s;
+//@@
+//
+//  PyNumberMethods structname = {
+//  %(fillers)s%(comma)s
+//- slotval,
+//+ .%(field_name)s = slotval,
+//  ...
+//  };""" % locals())
+//
+// ## PyMappingMethods slots ##
+//
+//for num_fillers, field_name in reversed(list(enumerate("""
+//  mp_length mp_subscript mp_ass_subscript
+//""".split()))):
+//    fillers = ','.join(f'E{n}' for n in range(num_fillers))
+//    if fillers:
+//        comma = ','
+//    else:
+//        comma = ''
+//    print("""
+//@@
+//identifier structname;
+//expression slotval%(comma)s%(fillers)s;
+//@@
+//
+//  PyMappingMethods structname = {
 //  %(fillers)s%(comma)s
 //- slotval,
 //+ .%(field_name)s = slotval,
@@ -539,25 +597,517 @@ expression metatype,size,slotval;
 + .tp_name = slotval,
   ...
   };
-//[[[end]]]
 
 @@
-identifier typename;
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,E28,E29,E30,E31,E32,E33,E34;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,E28,E29,E30,E31,E32,E33,E34,
+- slotval,
++ .nb_inplace_matrix_multiply = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,E28,E29,E30,E31,E32,E33;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,E28,E29,E30,E31,E32,E33,
+- slotval,
++ .nb_matrix_multiply = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,E28,E29,E30,E31,E32;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,E28,E29,E30,E31,E32,
+- slotval,
++ .nb_index = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,E28,E29,E30,E31;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,E28,E29,E30,E31,
+- slotval,
++ .nb_inplace_true_divide = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,E28,E29,E30;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,E28,E29,E30,
+- slotval,
++ .nb_inplace_floor_divide = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,E28,E29;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,E28,E29,
+- slotval,
++ .nb_true_divide = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,E28;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,E28,
+- slotval,
++ .nb_floor_divide = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,E27,
+- slotval,
++ .nb_inplace_or = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,E26,
+- slotval,
++ .nb_inplace_xor = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,E25,
+- slotval,
++ .nb_inplace_and = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,E24,
+- slotval,
++ .nb_inplace_rshift = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,E23,
+- slotval,
++ .nb_inplace_lshift = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,E22,
+- slotval,
++ .nb_inplace_power = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,E21,
+- slotval,
++ .nb_inplace_remainder = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,E20,
+- slotval,
++ .nb_inplace_multiply = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,E19,
+- slotval,
++ .nb_inplace_subtract = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,E18,
+- slotval,
++ .nb_inplace_add = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,E17,
+- slotval,
++ .nb_float = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,E16,
+- slotval,
++ .nb_reserved = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,E15,
+- slotval,
++ .nb_int = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,E14,
+- slotval,
++ .nb_or = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,E13,
+- slotval,
++ .nb_xor = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,E12,
+- slotval,
++ .nb_and = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11,
+- slotval,
++ .nb_rshift = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,
+- slotval,
++ .nb_lshift = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8,E9;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,E9,
+- slotval,
++ .nb_invert = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7,E8;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,E8,
+- slotval,
++ .nb_bool = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6,E7;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,E7,
+- slotval,
++ .nb_absolute = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5,E6;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,E6,
+- slotval,
++ .nb_positive = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4,E5;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,E5,
+- slotval,
++ .nb_negative = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3,E4;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,E4,
+- slotval,
++ .nb_power = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2,E3;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,E3,
+- slotval,
++ .nb_divmod = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1,E2;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,E2,
+- slotval,
++ .nb_remainder = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1;
+@@
+
+  PyNumberMethods structname = {
+  E0,E1,
+- slotval,
++ .nb_multiply = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0;
+@@
+
+  PyNumberMethods structname = {
+  E0,
+- slotval,
++ .nb_subtract = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval;
+@@
+
+  PyNumberMethods structname = {
+  
+- slotval,
++ .nb_add = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0,E1;
+@@
+
+  PyMappingMethods structname = {
+  E0,E1,
+- slotval,
++ .mp_ass_subscript = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval,E0;
+@@
+
+  PyMappingMethods structname = {
+  E0,
+- slotval,
++ .mp_subscript = slotval,
+  ...
+  };
+
+@@
+identifier structname;
+expression slotval;
+@@
+
+  PyMappingMethods structname = {
+  
+- slotval,
++ .mp_length = slotval,
+  ...
+  };
+//[[[end]]]
+
+@ remove_nulls_start @
+type T = PyTypeObject || = PyNumberMethods || = PyMappingMethods;
+identifier structname;
+@@
+
+  T structname = {
+  ...
+  };
+
+@@
+type remove_nulls_start.T;
+identifier remove_nulls_start.structname;
+metavariable slotname;
+type t;
+@@
+
+  T structname = {
+  ...,
+- .slotname = (t)0,
+  ...
+  };
+
+@@
+type remove_nulls_start.T;
+identifier remove_nulls_start.structname;
 metavariable slotname;
 @@
 
-  PyTypeObject typename = {
+  T structname = {
   ...,
 - .slotname = 0,
   ...
   };
 
 @@
-identifier typename;
+type remove_nulls_start.T;
+identifier remove_nulls_start.structname;
 metavariable slotname;
 @@
 
-  PyTypeObject typename = {
+  T structname = {
   ...,
 - .slotname = NULL,
   ...
