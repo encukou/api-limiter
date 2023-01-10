@@ -86,7 +86,7 @@ symbol PyType_Type;
 //
 //for slot_name in reversed((
 //    'tp_doc', 'tp_dealloc', 'tp_iter', 'tp_iternext', 'tp_methods',
-//    'tp_getattro', 'tp_setattro',
+//    'tp_getattro', 'tp_setattro', 'tp_str', 'tp_getset',
 // )):
 //    print("""
 //@ get_%(slot_name)s depends on init_static_to_dynamic @
@@ -802,6 +802,40 @@ identifier subtable;
 - };
 
 
+@ get_tp_getset depends on init_static_to_dynamic @
+identifier init_static_to_dynamic.typename;
+expression E;
+@@
+  PyTypeObject typename = {
+-   .tp_getset = E,
+  };
+@ depends on get_tp_getset @
+identifier init_static_to_dynamic.slotsname;
+expression get_tp_getset.E;
+@@
+  static PyType_Slot slotsname[] = {
++   {Py_tp_getset, E},
+    ...
+  };
+
+
+@ get_tp_str depends on init_static_to_dynamic @
+identifier init_static_to_dynamic.typename;
+expression E;
+@@
+  PyTypeObject typename = {
+-   .tp_str = E,
+  };
+@ depends on get_tp_str @
+identifier init_static_to_dynamic.slotsname;
+expression get_tp_str.E;
+@@
+  static PyType_Slot slotsname[] = {
++   {Py_tp_str, E},
+    ...
+  };
+
+
 @ get_tp_setattro depends on init_static_to_dynamic @
 identifier init_static_to_dynamic.typename;
 expression E;
@@ -941,6 +975,46 @@ expression O;
 +   .flags = O | E,
   };
 
+// Handle tp_new: Disable the Py_TPFLAGS_IMMUTABLETYPE flag
+
+@ get_tp_new @
+identifier init_static_to_dynamic.typename;
+expression E;
+@@
+  PyTypeObject typename = {
+-   .tp_new = E,
+  };
+@ flag_remove_immutable depends on get_tp_new @
+identifier init_static_to_dynamic.specname;
+expression E;
+@@
+  PyType_Spec specname = {
+    .flags = E,
+  };
+@ script:python flag_remove_immutable_py @
+E << flag_remove_immutable.E;
+R;
+@@
+flags = [f.strip() for f in E.split('|')]
+coccinelle.R = ' | '.join(f for f in flags if f != 'Py_TPFLAGS_IMMUTABLETYPE')
+@@
+identifier init_static_to_dynamic.specname;
+expression flag_remove_immutable.E;
+identifier flag_remove_immutable_py.R;
+@@
+  PyType_Spec specname = {
+-   .flags = E,
++   .flags = R,
+  };
+@ depends on get_tp_new @
+identifier init_static_to_dynamic.slotsname;
+expression get_tp_new.E;
+@@
+  static PyType_Slot slotsname[] = {
++   {Py_tp_new, E},
+    ...
+  };
+
 
 
 // De-duplicate flags
@@ -968,6 +1042,21 @@ identifier flagdedup_py.R;
 +   .flags = R,
   };
 
+// Remove casts
+
+@@
+identifier init_static_to_dynamic.slotsname;
+identifier S;
+expression E;
+type T;
+@@
+
+  static PyType_Slot slotsname[] = {
+    ...,
+-   { S, (T) E },
++   { S, E },
+    ...
+  };
 
 // Remove empty declaration
 
