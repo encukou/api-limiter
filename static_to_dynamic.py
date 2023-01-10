@@ -11,6 +11,8 @@ from pycparser.c_ast import Node, Decl, TypeDecl, IdentifierType, Constant, ID
 from pycparser.c_ast import NamedInitializer, InitList, UnaryOp, Cast, BinaryOp
 from pycparser.c_ast import Typename
 
+from api_limiter.context import Context
+
 INTERESTING_CHARS = re.compile(r'''[][(){}"]|\\.''')
 OPENERS = dict(('}{', ')(', '][', '""'))
 
@@ -68,104 +70,6 @@ cpp_args = [
     '-I', Path(__file__).parent / 'pycparser/utils/fake_libc_include',
 ]
 #subprocess.run(['cpp', *cpp_args, sys.argv[1]])
-
-@dataclass
-class Context:
-    filename: str
-    ast: Node
-    original_lines: list[str]
-    _removed_lines: set[int]
-    _added_lines: dict[int, list[str]]
-
-    def remove_lines(self, start, stop):
-        self._removed_lines.update(range(start, stop))
-
-    def remove_struct_at(self, orig_lineno):
-        # Removing code is a bit tricky, since pycparser doesn't give us an
-        # end coordinate. So we use a simple algorithm that scans for a
-        # matchig brace.
-        # Limitations:
-        # - Only whole lines can be removed
-        # - The removed struct can't share lines with any other code
-        # - The opening brace must be at 'orig_lineno'
-        # - The semicolon must be at the line with the closing brace
-        # - And more?
-        stack = []
-        def _add_to_stack(c, lineno):
-            if opener := OPENERS.get(c):
-                if stack and stack[-1] == opener:
-                    stack.pop()
-                    return
-                elif opener != c:
-                    raise NotImplementedError(f"{self.filename}:{lineno}: unexpected '{c}'")
-            stack.append(c)
-        should_end = False
-        for lineno in count(start=orig_lineno):
-            self._removed_lines.add(lineno)
-            line = self.original_lines[lineno-1]
-            for c in INTERESTING_CHARS.findall(line):
-                if c.startswith('\\'):
-                    continue
-                _add_to_stack(c, lineno)
-                if not stack:
-                    should_end = True
-            if should_end:
-                if not line.strip().endswith('};'):
-                    raise NotImplementedError(f"{self.filename}:{lineno}: expected semicolon at end, {line=}")
-                if stack:
-                    raise NotImplementedError(f"{self.filename}:{lineno}: unexpected situation, {stack=} {c=}")
-                break
-
-    def add_lines(self, after_orig_line, *lines, end='\n'):
-        for line in lines:
-            line = line.rstrip() + end
-            self._added_lines.setdefault(after_orig_line, []).append(line)
-
-    def iter_lines(self):
-        for number, line in enumerate(self.original_lines, start=1):
-            if number not in self._removed_lines:
-                yield line
-            for extra_line in self._added_lines.get(number, ()):
-                yield extra_line
-
-    def gen_diff(self, context_size=3, colors=False):
-        if colors:
-            REMOVED = '\x1b[31m-{}\x1b[m'
-            ADDED = '\x1b[32m+{}\x1b[m'
-            CONTEXT = ' {}'
-            HEADER = '\x1b[36m{}\x1b[m'
-        else:
-            REMOVED = '-{}'
-            ADDED = '+{}'
-            CONTEXT = ' {}'
-            HEADER = '{}'
-        affected = self._removed_lines | self._added_lines.keys()
-        if affected:
-            yield HEADER.format(f'--- {self.filename}\n')
-            yield HEADER.format(f'+++ {self.filename}\n')
-        last_lineno = None
-        new_lineno = 1
-        for number, line in enumerate(self.original_lines, start=1):
-            if (
-                number in affected
-                or any(
-                    n in affected
-                    for n in range(number-context_size, number+1+context_size)
-                )
-            ):
-                for extra_line in self._added_lines.get(number, ()):
-                    yield ADDED.format(extra_line)
-                    new_lineno += 1
-                if last_lineno != number - 1:
-                    yield HEADER.format(f'@@ -{number} +{new_lineno} @@\n')
-                if number in self._removed_lines:
-                    yield REMOVED.format(line)
-                else:
-                    yield CONTEXT.format(line)
-                    new_lineno += 1
-                last_lineno = number
-            else:
-                new_lineno += 1
 
 @dataclass
 class TypeVarHead:
@@ -258,12 +162,13 @@ def absorb_subtable(ctx, typename, name):
                 name=declname,
                 type=TypeDecl(type=IdentifierType(names=[decltype])),
             ) if declname == name and decltype == typename:
-                ctx.remove_struct_at(node.coord.line)
+                ctx.remove_struct_at(node.coord.file, node.coord.line)
                 return get_fields(node.init, SUBTABLE_FIELDS[typename])
 
 def convert_static_type(ctx, decl):
+    filename = decl.coord.file
     start_line = decl.coord.line
-    ctx.remove_struct_at(start_line)
+    ctx.remove_struct_at(filename, start_line)
     slots_lines = [
         undigraph(f'static PyType_Slot {decl.name}_Slots[] = <%'),
     ]
@@ -323,25 +228,12 @@ def convert_static_type(ctx, decl):
     spec_lines.append(f'    .flags = {" | ".join(flags)},')
     spec_lines.append(f'    .slots = {decl.name}_Slots,')
     spec_lines.append('};')
-    ctx.add_lines(start_line, *slots_lines, '', *spec_lines)
+    ctx.add_lines(filename, start_line, *slots_lines, '', *spec_lines)
 
 def limit_file(filename):
-    ast = parse_file(
-        filename,
-        use_cpp=True,
-        cpp_args=cpp_args,
-    )
-    with Path(filename).open() as f:
-        lines = list(f)
-    ctx = Context(
-        filename=filename,
-        ast=ast,
-        original_lines=lines,
-        _removed_lines=set(),
-        _added_lines={},
-    )
-    ast.show(showcoord=True)
-    for node in ast:
+    ctx = Context(filename=filename, cpp_args=['-D_POSIX_THREADS'])
+    ctx.ast.show(showcoord=True)
+    for node in ctx.ast:
         if node.coord.file != filename:
             continue
         match node:
