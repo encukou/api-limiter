@@ -147,9 +147,9 @@ def absorb_subtable(ctx, typename, name):
                 return get_fields(node.init, SUBTABLE_FIELDS[typename])
 
 def convert_static_type(ctx, decl):
-    filename = decl.coord.file
+    filepath = decl.coord.file
     start_line = decl.coord.line
-    ctx.remove_struct_at(filename, start_line)
+    ctx.remove_struct_at(filepath, start_line)
     slots_lines = [
         undigraph(f'static PyType_Slot {decl.name}_Slots[] = <%'),
     ]
@@ -209,7 +209,7 @@ def convert_static_type(ctx, decl):
     spec_lines.append(f'    .flags = {" | ".join(flags)},')
     spec_lines.append(f'    .slots = {decl.name}_Slots,')
     spec_lines.append('};')
-    ctx.add_lines(filename, start_line, *slots_lines, '', *spec_lines)
+    ctx.add_lines(filepath, start_line, *slots_lines, '', *spec_lines)
 
 def static_to_dynamic(ctx):
     """Convert static types to dynamic ones in the given context.

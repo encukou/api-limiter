@@ -12,10 +12,10 @@ OPENERS = dict(('}{', ')(', '][', '""'))
 class Context:
     files: dict[Path, 'FileContext']
 
-    def __init__(self, filename, cpp_args):
+    def __init__(self, filepath, cpp_args):
         self.file_contexts = {}
         self.ast = parse_file(
-            filename,
+            filepath,
             use_cpp=True,
             cpp_args=[
                 '-E',
@@ -25,7 +25,7 @@ class Context:
                 *cpp_args
             ],
         )
-        self[filename]
+        self[filepath]
 
     def __getitem__(self, path):
         path = Path(path)
@@ -39,21 +39,26 @@ class Context:
         for file_context in self.file_contexts.values():
             yield from file_context.gen_diff(*args, **kwargs)
 
-    def remove_struct_at(self, filename, orig_lineno):
-        self[filename].remove_struct_at(orig_lineno)
+    def remove_struct_at(self, filepath, orig_lineno):
+        self[filepath].remove_struct_at(orig_lineno)
 
-    def add_lines(self, filename, orig_lineno, *lines):
-        self[filename].add_lines(orig_lineno, *lines)
+    def add_lines(self, filepath, orig_lineno, *lines):
+        self[filepath].add_lines(orig_lineno, *lines)
+
+    def write_back(self, filepath):
+        with filepath.open('w') as file:
+            for line in self[filepath].iter_lines():
+                file.write(line)
 
 class FileContext:
-    filename: Path
+    filepath: Path
     original_lines: tuple[str]
     _removed_lines: set[int]
     _added_lines: dict[int, list[str]]
 
-    def __init__(self, filename):
-        self.filename = filename
-        with filename.open() as f:
+    def __init__(self, filepath):
+        self.filepath = filepath
+        with filepath.open() as f:
             self.original_lines = tuple(f)
         self._removed_lines = set()
         self._added_lines = {}
@@ -78,7 +83,7 @@ class FileContext:
                     stack.pop()
                     return
                 elif opener != c:
-                    raise NotImplementedError(f"{self.filename}:{lineno}: unexpected '{c}'")
+                    raise NotImplementedError(f"{self.filepath}:{lineno}: unexpected '{c}'")
             stack.append(c)
         should_end = False
         for lineno in count(start=orig_lineno):
@@ -92,9 +97,9 @@ class FileContext:
                     should_end = True
             if should_end:
                 if not line.strip().endswith('};'):
-                    raise NotImplementedError(f"{self.filename}:{lineno}: expected semicolon at end, {line=}")
+                    raise NotImplementedError(f"{self.filepath}:{lineno}: expected semicolon at end, {line=}")
                 if stack:
-                    raise NotImplementedError(f"{self.filename}:{lineno}: unexpected situation, {stack=} {c=}")
+                    raise NotImplementedError(f"{self.filepath}:{lineno}: unexpected situation, {stack=} {c=}")
                 break
 
     def add_lines(self, after_orig_line, *lines, end='\n'):
@@ -122,8 +127,8 @@ class FileContext:
             HEADER = '{}'
         affected = self._removed_lines | self._added_lines.keys()
         if affected:
-            yield HEADER.format(f'--- {self.filename}\n')
-            yield HEADER.format(f'+++ {self.filename}\n')
+            yield HEADER.format(f'--- {self.filepath}\n')
+            yield HEADER.format(f'+++ {self.filepath}\n')
         last_lineno = None
         new_lineno = 1
         for number, line in enumerate(self.original_lines, start=1):
