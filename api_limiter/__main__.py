@@ -7,6 +7,8 @@ from api_limiter.static_to_dynamic import static_to_dynamic
 
 converted_type_names = []
 
+DRY_RUN = False
+
 for filename in sys.argv[1:]:
     filepath = Path(filename)
     ctx = Context(filepath=filepath, cpp_args=['-D_POSIX_THREADS'])
@@ -14,7 +16,8 @@ for filename in sys.argv[1:]:
     converted_type_names.extend(static_to_dynamic(ctx))
     for line in ctx.gen_diff(colors=True):
         print(line, end='')
-    #ctx.write_back(filepath)
+    if not DRY_RUN:
+        ctx.write_back(filepath)
 
 with Path('replacer.cocci').open('w') as outfile:
     def output(*pieces):
@@ -29,7 +32,7 @@ with Path('replacer.cocci').open('w') as outfile:
         output(f'+ T')
         output()
 
-        output(f'@ spek_{type_name} @')
+        output(f'@@')
         output(f'identifier T = {type_name};')
         output(f'fresh identifier S = T ## "_Spec";')
         output(f'@@')
@@ -39,24 +42,28 @@ with Path('replacer.cocci').open('w') as outfile:
         output()
 
         output(f'@@')
-        output(f'identifier spek_{type_name}.T;')
-        output(f'identifier spek_{type_name}.S;')
         output(f'@@')
-        output('+ PyTypeObject* T;')
-        output('  PyType_Spec S = {')
+        output(f'+ PyTypeObject* {type_name};')
+        output(f'  PyType_Spec {type_name}_Spec = {{')
         output('  ...')
         output('  };')
         output()
 
-subprocess.run([
+
+proc_args = [
     'spatch',
     '--smpl-spacing',
     '-I', '.',
-    #'--include', 'Python.h',
     '--preprocess',
     '--sp-file',
     'replacer.cocci',
-    *sys.argv[1:],
+    *[
+        p for p in sys.argv[1:]
+        if not p.endswith('rpmmodule.c')
+    ],
     *Path('~/dev/rpm/python/').expanduser().glob('*.h'),
-])
+]
+if not DRY_RUN:
+    proc_args.append('--in-place')
+subprocess.run(proc_args)
 
